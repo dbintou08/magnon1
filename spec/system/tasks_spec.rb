@@ -14,23 +14,51 @@ RSpec.describe 'Task management function', type: :system do
   end
 
   describe 'List display function' do
-    context 'When transitioning to the list screen' do
-      it 'A list of registered tasks is displayed' do
-        FactoryBot.create(:task)
+    let!(:first_task) { FactoryBot.create(:task, titre: "first_task", created_at: Time.zone.now.ago(3.days)) }
+    let!(:second_task) { FactoryBot.create(:task, titre: "second_task", created_at: Time.zone.now.ago(2.days)) }
+    let!(:third_task) { FactoryBot.create(:task, titre: "third_task", created_at: Time.zone.now.ago(1.days)) }
+      before do
         visit tasks_path
-        expect(page).to have_content 'First_test'
+      end
+
+      context 'When transitioning to the list screen' do
+       it 'The list of created tasks is displayed in descending order of creation date and time.' do
+        task_list = all('body tbody tr')
+        expect(task_list[0]).to have_content 'third_task'
+        expect(task_list[1]).to have_content 'second_task'
+        expect(task_list[2]).to have_content 'first_task'
       end
     end
-  end
+      context 'When creating a new task' do
+        it 'New task is displayed at the top' do
+        visit new_task_path
+        fill_in "Titre", with: "title"
+        fill_in "Content", with: "content"
+        click_button "Create Task"
+        expect(all('tbody tr')[0].text).to have_content Task.last.title 
+        fill_in "Titre", with: "title1"
+        fill_in "contenu", with: "content"
+        click_button "Creer"
+        expect(page).to have_content "title1"
+        end
+      end
+    end
 
   describe 'Detailed display function' do
+
      context 'When transitioned to any task details screen' do
-           let (:task) {FactoryBot.create(:task, title: 'First_test', content: 'test reussi')}
+        let (:task) {FactoryBot.create(:task, titre: 'Test', content: 'Je suis un contenu')}
         it 'The content of the task is displayed' do
 
           visit task_path(task)
-          expect(page).to have_content 'test reussi'
+          all('tbody tr')[0].click_button"show-task"
+            expect(page).to have_content 'Test2'
+            expect(page).to have_content 'Test valide encore'
+            expect(page).to have_content first_task.set_date
+            expect(page).to have_button'éditer'
+            expect(page).to have_button'retour'
+          visit task_path(task)
+          expect(page).to have_content 'Je suis un contenu'
         end
      end
   end
-end
